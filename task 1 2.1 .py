@@ -14,6 +14,13 @@ ACTIONS = {
 }
 ACTION_LIST = ['U', 'D', 'L', 'R']
 
+PERP = {
+    'U': ['L', 'R'],
+    'D': ['L', 'R'],
+    'L': ['U', 'D'],
+    'R': ['U', 'D'],
+}
+
 START = (0, 0)
 GOAL  = (4, 4)
 ROADBLOCKS = {(2, 1), (2, 3)}
@@ -26,20 +33,33 @@ def get_states():
                    for y in range(GRID_SIZE)
                    if (x, y) not in ROADBLOCKS]
 
-def transition(state, action):
-    if state == GOAL:
-        return state
+def move(state, action):
     dx, dy = ACTIONS[action]
     nx, ny = state[0] + dx, state[1] + dy
     if is_valid(nx, ny):
         return (nx, ny)
     return state
 
-def reward(state, action):
+def get_transitions(state, action):
+    """Returns list of (next_state, probability) using the 0.8/0.1/0.1 model."""
+    if state == GOAL:
+        return [(GOAL, 1.0)]
+    p1, p2 = PERP[action]
+    outcomes = [
+        (move(state, action), 0.8),
+        (move(state, p1),     0.1),
+        (move(state, p2),     0.1),
+    ]
+    # Merge probabilities if two slips land on the same next state
+    merged = {}
+    for ns, p in outcomes:
+        merged[ns] = merged.get(ns, 0.0) + p
+    return list(merged.items())
+
+def step_reward(state, next_state):
     if state == GOAL:
         return 0
-    ns = transition(state, action)
-    if ns == GOAL:
+    if next_state == GOAL:
         return -1 + 10  # step cost + goal bonus
     return -1
 
@@ -57,8 +77,12 @@ def value_iteration():
             if s == GOAL:
                 new_V[s] = 0.0
                 continue
-            q_values = [reward(s, a) + GAMMA * V[transition(s, a)]
-                        for a in ACTION_LIST]
+            # V(s) = max_a Σ p(s'|s,a) [R(s,s') + γ·V(s')]
+            q_values = []
+            for a in ACTION_LIST:
+                q = sum(p * (step_reward(s, ns) + GAMMA * V[ns])
+                        for ns, p in get_transitions(s, a))
+                q_values.append(q)
             new_V[s] = max(q_values)
             delta = max(delta, abs(new_V[s] - V[s]))
         V = new_V
@@ -71,7 +95,8 @@ def value_iteration():
         if s == GOAL:
             policy[s] = None
             continue
-        q_values = {a: reward(s, a) + GAMMA * V[transition(s, a)]
+        q_values = {a: sum(p * (step_reward(s, ns) + GAMMA * V[ns])
+                           for ns, p in get_transitions(s, a))
                     for a in ACTION_LIST}
         policy[s] = max(q_values, key=q_values.get)
 
@@ -88,7 +113,8 @@ def policy_evaluation(policy, V):
             if s == GOAL:
                 continue
             a = policy[s]
-            v_new = reward(s, a) + GAMMA * V[transition(s, a)]
+            v_new = sum(p * (step_reward(s, ns) + GAMMA * V[ns])
+                        for ns, p in get_transitions(s, a))
             delta = max(delta, abs(v_new - V[s]))
             V[s] = v_new
         if delta < THETA:
@@ -110,7 +136,8 @@ def policy_iteration():
             if s == GOAL:
                 continue
             old_action = policy[s]
-            q_values = {a: reward(s, a) + GAMMA * V[transition(s, a)]
+            q_values = {a: sum(p * (step_reward(s, ns) + GAMMA * V[ns])
+                               for ns, p in get_transitions(s, a))
                         for a in ACTION_LIST}
             best_action = max(q_values, key=q_values.get)
             policy[s] = best_action
@@ -186,4 +213,3 @@ if __name__ == "__main__":
 
     print("\n=== COMPARISON ===\n")
     compare_policies(policy_vi, policy_pi, "VI", "PI")
-    
