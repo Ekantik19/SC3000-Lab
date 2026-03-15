@@ -1,5 +1,5 @@
 """
-CZ3005 / SC3005 Lab Assignment 1
+SC3000 Lab Assignment 1
 Part 2 — Grid World: Tasks 1, 2, 3
 ====================================
 Grid World: 5×5
@@ -70,7 +70,6 @@ def is_valid(x, y):
             (x, y) not in ROADBLOCKS)
 
 def move(state, action):
-    """Apply action deterministically. Stays if invalid."""
     dx, dy = ACTION_DELTA[action]
     nx, ny = state[0] + dx, state[1] + dy
     if is_valid(nx, ny):
@@ -78,11 +77,6 @@ def move(state, action):
     return state
 
 def stochastic_transition(state, action):
-    """
-    Samples next state from the stochastic environment.
-    The agent does NOT have access to this directly —
-    it only observes the resulting (next_state, reward) pair.
-    """
     perp_left, perp_right = PERP[action]
     transitions = [
         (action,     0.8),
@@ -95,23 +89,15 @@ def stochastic_transition(state, action):
         cumulative += p
         if r <= cumulative:
             return move(state, a)
-    return move(state, action)  # numerical fallback
+    return move(state, action)  
 
 def env_step(state, action):
-    """
-    Agent calls this to interact with the environment.
-    Returns: (next_state, reward, done)
-    """
     next_state = stochastic_transition(state, action)
     if next_state == GOAL:
         return next_state, 10.0, True
     return next_state, -1.0, False
 
 def get_transitions(state, action):
-    """
-    Returns list of (next_state, probability) using 0.8/0.1/0.1 model.
-    Used by Task 1 (VI/PI) since the transition model is fully known.
-    """
     if state == GOAL:
         return [(GOAL, 1.0)]
     p1, p2 = PERP[action]
@@ -129,15 +115,10 @@ def step_reward(state, next_state):
     if state == GOAL:
         return 0
     if next_state == GOAL:
-        return -1 + 10  # step cost + goal bonus
+        return -1 + 10  
     return -1
 
 def epsilon_greedy(Q, state, epsilon):
-    """
-    With probability ε  → random action (explore)
-    With probability 1-ε → greedy action (exploit)
-    Ties broken randomly.
-    """
     if random.random() < epsilon:
         return random.choice(ACTIONS)
     q_vals = [Q[(state, a)] for a in ACTIONS]
@@ -148,7 +129,6 @@ def epsilon_greedy(Q, state, epsilon):
 
 # ─────────────────────────────────────────────────────────
 #  TASK 1A: Value Iteration
-#  Model fully known. Stochastic transitions (0.8/0.1/0.1).
 # ─────────────────────────────────────────────────────────
 
 def value_iteration():
@@ -192,7 +172,6 @@ def value_iteration():
 
 # ─────────────────────────────────────────────────────────
 #  TASK 1B: Policy Iteration
-#  Model fully known. Stochastic transitions (0.8/0.1/0.1).
 # ─────────────────────────────────────────────────────────
 
 def policy_evaluation(policy, V):
@@ -248,10 +227,6 @@ def policy_iteration():
 # ─────────────────────────────────────────────────────────
 
 def generate_episode(Q, epsilon):
-    """
-    Runs one episode from START using the ε-greedy policy.
-    Returns list of (state, action, reward) tuples.
-    """
     episode = []
     state   = START
     for _ in range(MAX_STEPS):
@@ -264,20 +239,6 @@ def generate_episode(Q, epsilon):
     return episode
 
 def mc_control(num_episodes=NUM_EPISODES, epsilon=EPSILON, gamma=GAMMA):
-    """
-    First-Visit MC Control with ε-greedy policy improvement.
-
-    Per assignment spec:
-      - Fixed ε=0.1 throughout (no decay)
-      - Always starts from START state (0,0)
-      - Estimates Q(s,a) from first-visit sampled returns
-
-    For each episode:
-      1. Generate episode using current ε-greedy policy.
-      2. Compute discounted return G backwards.
-      3. On first visit of each (s,a), update Q(s,a)
-         using incremental mean (memory efficient).
-    """
     Q             = defaultdict(float)
     returns_sum   = defaultdict(float)
     returns_count = defaultdict(int)
@@ -323,22 +284,6 @@ def mc_control(num_episodes=NUM_EPISODES, epsilon=EPSILON, gamma=GAMMA):
 
 def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON,
                alpha=ALPHA, gamma=GAMMA):
-    """
-    Tabular Q-Learning with ε-greedy exploration.
-
-    Per assignment spec:
-      - Fixed ε=0.1 throughout (no decay)
-      - Fixed α=0.1 throughout (no decay)
-      - Always starts from START state (0,0)
-      - Agent does NOT access transition probabilities
-
-    Unlike MC, Q-Learning updates Q-values after every single step
-    using the Bellman TD update rule:
-      Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
-
-    This makes Q-Learning an online, off-policy TD method that
-    converges faster than MC due to per-step updates.
-    """
     Q = defaultdict(float)  # Q[(state, action)] initialised to 0.0
 
     print(f"\n  Starting Q-Learning training: {num_episodes} episodes ...")
@@ -393,7 +338,7 @@ def print_policy_grid(policy, label="Policy"):
         for x in range(GRID_SIZE):
             s = (x, y)
             if s in ROADBLOCKS:
-                row += "  ██ |"
+                row += "  X  |"
             else:
                 a   = policy.get(s, '?')
                 sym = ARROW.get(a, a)
@@ -412,7 +357,7 @@ def print_value_function(V, label="Value Function"):
         for x in range(GRID_SIZE):
             s = (x, y)
             if s in ROADBLOCKS:
-                row += "   ██  "
+                row += "   X  "
             elif s == GOAL:
                 row += "   G   "
             else:
@@ -461,7 +406,6 @@ def compare_policies(p1, p2, label1="Policy 1", label2="Policy 2"):
         print(f"  ✓ Policies are IDENTICAL.")
 
 def simulate_greedy(Q, label="Policy", num_runs=1000):
-    """Run greedy simulations, report success rate and example path."""
     successes    = 0
     example_path = None
 
@@ -495,10 +439,6 @@ def simulate_greedy(Q, label="Policy", num_runs=1000):
 # ─────────────────────────────────────────────────────────
 
 def convergence_analysis(num_episodes=100000, interval=10000):
-    """
-    Runs Q-Learning and MC in parallel, tracking average episode
-    reward every `interval` episodes to compare convergence speed.
-    """
     Q_ql   = defaultdict(float)
     Q_mc   = defaultdict(float)
     rs_mc  = defaultdict(float)

@@ -106,12 +106,6 @@ def verify_path(path: list) -> dict:
 # ─────────────────────────────────────────────────────────
 
 def task1_astar():
-    """
-    A* search with no energy constraint.
-    Priority: f(n) = g(n) + h(n)
-      g(n) = cumulative distance from source
-      h(n) = Euclidean distance to target (admissible heuristic)
-    """
     counter = 0
     heap    = [(heuristic(SOURCE), 0, counter, SOURCE)]
     visited = set()
@@ -154,18 +148,9 @@ def task1_astar():
 
 # ─────────────────────────────────────────────────────────
 #  TASK 2: UCS — Uniform Cost Search (with energy budget)
-#
-#  Uninformed search that expands nodes in order of cumulative
-#  distance. Energy constraint enforced by pruning paths that
-#  exceed the budget. No heuristic used.
 # ─────────────────────────────────────────────────────────
 
 def task2_ucs():
-    """
-    Uniform Cost Search with energy budget constraint.
-    Priority: cumulative distance g(n).
-    Prunes any path where cumulative energy > BUDGET.
-    """
     heap    = [(0, SOURCE, 0, [SOURCE])]   # (dist, node, energy, path)
     visited = {}                           # node -> best energy seen
 
@@ -193,26 +178,12 @@ def task2_ucs():
 
 # ─────────────────────────────────────────────────────────
 #  TASK 3: A* Search (with energy budget)
-#
-#  Extends Task 1 A* by adding the energy budget constraint.
-#  Uses the same admissible Euclidean heuristic to guide search,
-#  exploring fewer nodes than UCS while still finding the optimal
-#  shortest path within the energy budget.
 # ─────────────────────────────────────────────────────────
 
 def task3_astar():
-    """
-    A* search with energy budget constraint.
-    Priority: f(n) = g(n) + h(n)
-      g(n) = cumulative distance from source
-      h(n) = Euclidean distance to target (admissible)
-    Prunes paths exceeding the energy budget.
-    Dominance pruning: skip node if previously seen with
-    both lower/equal distance AND lower/equal energy.
-    """
-    best     = {}                                      # node -> (dist, energy)
+    best     = {}                                      
     start_h  = heuristic(SOURCE)
-    heap     = [(start_h, 0, 0, SOURCE, [SOURCE])]    # (f, g, energy, node, path)
+    heap     = [(start_h, 0, 0, SOURCE, [SOURCE])]    
 
     while heap:
         f, g, energy, node, path = heapq.heappop(heap)
@@ -220,7 +191,7 @@ def task3_astar():
         if node == TARGET:
             return path, g, energy
 
-        # Dominance pruning
+        
         prev = best.get(node)
         if prev is not None:
             prev_dist, prev_energy = prev
