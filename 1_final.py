@@ -1,15 +1,3 @@
-"""
-CZ3005 / SC3005 Lab Assignment 1
-Part 1 — Finding a Shortest Path with An Energy Budget
-=======================================================
-Task 1: A* Search (no energy constraint — relaxed problem)
-Task 2: UCS — Uniform Cost Search (with energy budget = 287932)
-Task 3: A* Search (with energy budget = 287932)
-
-Start node : '1'
-End node   : '50'
-"""
-
 import json
 import heapq
 import math
@@ -252,7 +240,7 @@ def print_result(task_name, path, dist, energy):
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("  CZ3005 Lab Assignment 1 — Part 1")
+    print("  SC3000 Lab Assignment 1 — Part 1")
     print("  Shortest Path with Energy Budget")
     print("=" * 60)
     print(f"  Source : {SOURCE}  |  Target : {TARGET}  |  Budget : {BUDGET}")
